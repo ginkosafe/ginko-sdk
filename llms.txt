@@ -1,0 +1,366 @@
+# Ginko DCA Bot SDK
+
+> Ginko DCA Bot SDK is a TypeScript/JavaScript library for interacting with the Ginko Protocol on Solana blockchain. It provides a comprehensive set of tools for creating, managing, and executing dollar-cost averaging (DCA) orders for crypto assets.
+
+The SDK is built on top of Solana Web3.js and Anchor, providing type-safe interfaces for all protocol interactions. It handles token account creation, order management, and price oracle integration automatically.
+
+Key features:
+- Market and limit order support
+- Automatic token account management
+- Price oracle integration
+- Slippage protection
+- Order expiration management
+
+## Core Documentation
+
+- [SDK README](sdk/README.md): Complete overview of the SDK features and setup instructions
+- [SDK Specification](sdk/SPEC.md): Detailed technical specification of the SDK architecture and components
+
+## API Reference
+
+### Core Types
+
+```typescript
+// Order direction type
+type OrderDirection = "buy" | "sell";
+
+// Order type
+type OrderType = "market" | "limit";
+
+// Price representation
+type Price = {
+  mantissa: BN;  // Price value as fixed-point integer
+  scale: number; // Decimal scale factor
+};
+
+// Price information from Ginko API
+interface PriceInfo {
+  symbol: string;        // Asset symbol (e.g., "BTC/USD")
+  price: number;         // Current price
+  timestamp: number;     // Price timestamp (Unix timestamp in seconds)
+  confidence?: number;   // Price confidence score (0-1)
+}
+
+// Asset information
+interface Asset {
+  publicKey: PublicKey;    // Asset account address
+  nonce: number[];         // PDA nonce
+  bump: number;            // PDA bump seed
+  mint: PublicKey;         // Token mint address
+  ceiling: BN;            // Maximum supply
+  quotaPriceOracle: PublicKey; // Price oracle address
+  paused: boolean;        // Trading pause status
+}
+
+// Order information
+interface Order {
+  publicKey: PublicKey;    // Order account address
+  nonce: number[];         // PDA nonce
+  bump: number;            // PDA bump seed
+  owner: PublicKey;        // Order creator
+  asset: PublicKey;        // Asset being traded
+  inputHolder: PublicKey;  // Input token account
+  paymentMint: PublicKey;  // Payment token mint
+  priceOracle: PublicKey;  // Price oracle address
+  direction: OrderDirection;
+  type: OrderType;
+  limitPrice: Price | null;
+  inputQuantity: BN;       // Order size
+  slippageBps: number;     // Max slippage in basis points
+  createdAt: Date;
+  expireAt: Date;
+  canceledAt: Date | null;
+  filledQuantity: BN;
+  filledOutputQuantity: BN;
+  lastFillSlot: BN;
+}
+```
+
+### Public Instructions
+
+#### placeOrder
+
+Creates a new order to trade an asset. The method handles all necessary account creation and validation automatically.
+
+```typescript
+async function placeOrder(params: {
+  owner: PublicKey;           // Order creator's public key
+  asset: {                    // Asset to trade
+    publicKey: PublicKey;     // Asset account address
+    mint: PublicKey;          // Asset token mint
+  };
+  direction: OrderDirection;   // "buy" or "sell"
+  type: OrderType;            // "market" or "limit"
+  quantity: BN;               // Amount of input tokens
+  priceOracle: PublicKey;     // Oracle address
+  tradeMint: PublicKey;       // Trade token mint (must be different from asset.mint)
+  limitPrice?: Price | null;  // Required for limit orders, must be null for market orders
+  slippageBps?: number;       // Required non-zero for market orders, must be 0 for limit orders
+  expireTime?: number;        // Seconds until expiration (default: 3 hours)
+}): Promise<TransactionInstruction[]>
+```
+
+Validation rules:
+- `tradeMint` cannot be the same as `asset.mint`
+- For limit orders:
+  - `limitPrice` must be provided
+  - `slippageBps` must be 0
+- For market orders:
+  - `limitPrice` must be null
+  - `slippageBps` must be greater than 0
+
+Automatic handling:
+- Creates Associated Token Accounts (ATAs) if they don't exist
+- For sell orders, automatically creates the user's output token account
+- Generates a random nonce for the order
+- Derives the order PDA (Program Derived Address)
+- Sets up all necessary token accounts and program accounts
+
+Example usage:
+```typescript
+const sdk = new PublicInstructionBuilder(connection, program);
+
+// Place a limit buy order
+const buyInstructions = await sdk.placeOrder({
+  owner: wallet.publicKey,
+  asset: {
+    publicKey: assetAccount,
+    mint: assetMint
+  },
+  direction: "buy",
+  type: "limit",
+  quantity: new BN("1000000"), // 1 USDC (6 decimals)
+  priceOracle: oracleAccount,
+  tradeMint: usdcMint,        // Must be different from assetMint
+  limitPrice: {
+    mantissa: new BN("1500000"), // 1.5 USDC
+    scale: 6
+  },
+  slippageBps: 0,  // Must be 0 for limit orders
+  expireTime: 3600 // 1 hour expiration
+});
+
+// Place a market sell order
+const sellInstructions = await sdk.placeOrder({
+  owner: wallet.publicKey,
+  asset: {
+    publicKey: assetAccount,
+    mint: assetMint
+  },
+  direction: "sell",
+  type: "market",
+  quantity: new BN("1000000000"), // 1 token (9 decimals)
+  priceOracle: oracleAccount,
+  tradeMint: usdcMint,
+  limitPrice: null,  // Must be null for market orders
+  slippageBps: 100, // Must be > 0 for market orders (1% max slippage)
+  expireTime: 60    // 1 minute expiration
+});
+```
+
+Throws:
+- If tradeMint equals asset.mint
+- If limit order parameters are invalid
+- If market order parameters are invalid
+
+#### cancelOrder
+
+Cancels an existing order and returns funds to the owner. The method handles all necessary account creation and fund return automatically.
+
+```typescript
+async function cancelOrder(order: Order): Promise<TransactionInstruction[]>
+```
+
+Automatic handling:
+- For sell orders, automatically fetches the asset mint
+- Creates refund receiver token account if it doesn't exist
+- Sets up all necessary escrow and token program accounts
+
+Example usage:
+```typescript
+const sdk = new PublicInstructionBuilder(connection, program);
+
+// Cancel an existing order
+const cancelInstructions = await sdk.cancelOrder({
+  publicKey: orderAccount,
+  owner: wallet.publicKey,
+  direction: "buy",
+  type: "limit",
+  asset: assetAccount,
+  paymentMint: usdcMint,
+  inputHolder: orderInputAccount,
+  // ... other Order fields required by the interface
+});
+
+// The returned instructions will:
+// 1. Create refund receiver account if needed
+// 2. Cancel the order
+// 3. Return funds to the owner
+```
+
+Note: All necessary token accounts will be created automatically if they don't exist. The caller only needs to provide the order information.
+
+### Account Data API
+
+The `AccountData` class provides methods to fetch Ginko account data from the blockchain.
+
+```typescript
+class AccountData {
+  constructor(connection: Connection);
+
+  /**
+   * Fetch asset data for a given public key
+   * @param publicKey - Public key of the asset account
+   * @returns Promise resolving to Asset data
+   */
+  async asset(publicKey: PublicKey): Promise<Asset>;
+
+  /**
+   * Fetch assets with optional filters
+   * @param paused - Optional boolean to filter by paused status
+   * @returns Promise resolving to array of Asset data
+   */
+  async assets(paused?: boolean): Promise<Asset[]>;
+
+  /**
+   * Fetch order data for a given public key
+   * @param publicKey - Public key of the order account
+   * @returns Promise resolving to Order data
+   */
+  async order(publicKey: PublicKey): Promise<Order>;
+
+  /**
+   * Fetch orders with optional filters
+   * @param owner - Optional public key of the order owner
+   * @param asset - Optional public key of the asset
+   * @param paymentMint - Optional public key of the payment mint (input mint for buy orders, output mint for sell orders)
+   * @returns Promise resolving to array of Order data
+   */
+  async orders(
+    owner?: PublicKey,
+    asset?: PublicKey,
+    paymentMint?: PublicKey
+  ): Promise<Order[]>;
+}
+```
+
+Example usage:
+```typescript
+// Initialize AccountData
+const accountData = new AccountData(connection);
+
+// Fetch a specific asset
+const asset = await accountData.asset(assetPublicKey);
+console.log('Asset:', asset);
+
+// Fetch all non-paused assets
+const activeAssets = await accountData.assets(false);
+console.log('Active assets:', activeAssets);
+
+// Fetch a specific order
+const order = await accountData.order(orderPublicKey);
+console.log('Order:', order);
+
+// Fetch all orders for a specific user and asset
+const userOrders = await accountData.orders(
+  userPublicKey,    // owner
+  assetPublicKey,   // asset
+  usdcMint         // paymentMint
+);
+console.log('User orders:', userOrders);
+
+// Fetch all orders for a specific asset
+const assetOrders = await accountData.orders(
+  undefined,       // owner (any)
+  assetPublicKey,  // asset
+  undefined        // paymentMint (any)
+);
+console.log('Asset orders:', assetOrders);
+```
+
+### Price API
+
+#### parsePrice
+
+Converts a human-readable price string into the protocol's fixed-point `Price` format. This method is useful when creating limit orders or working with price data.
+
+```typescript
+function parsePrice(priceInput: string, decimals: number = 6): Price
+```
+
+Parameters:
+- `priceInput`: A string representing the price (e.g., "1.234", "45000.50")
+- `decimals`: Number of decimal places to use (default: 6)
+
+Returns: A `Price` object with:
+- `mantissa`: The price value shifted by `decimals` places and rounded down
+- `scale`: The number of decimal places used (same as input `decimals`)
+
+Example usage:
+```typescript
+// Parse a simple price
+const price1 = parsePrice("1.5");  // 1.5 USDC
+console.log(price1);
+// Output: {
+//   mantissa: new BN("1500000"),
+//   scale: 6
+// }
+
+// Parse a price with custom decimals
+const price2 = parsePrice("45000.50", 8);  // 45000.50 USD
+console.log(price2);
+// Output: {
+//   mantissa: new BN("4500050000000"),
+//   scale: 8
+// }
+
+// Use in a limit order
+const limitOrderInstructions = await sdk.placeOrder({
+  // ... other parameters ...
+  type: "limit",
+  limitPrice: parsePrice("1.5"),  // Limit price of 1.5 USDC
+  // ... other parameters ...
+});
+```
+
+Note: The method uses bignumber.js internally to handle decimal arithmetic precisely and rounds down (ROUND_FLOOR) to ensure the price is not higher than requested.
+
+#### getAssetPrice
+
+Fetches the current price of an asset from Ginko's price API.
+
+```typescript
+async function getAssetPrice(symbol: string): Promise<PriceInfo>
+```
+
+Example usage:
+```typescript
+// Fetch AAPL price
+const AaplPrice = await getAssetPrice("AAPL");
+console.log('AAPL price:', AaplPrice);
+// Output: {
+//   symbol: "AAPL",
+//   price: 45000.50,
+//   timestamp: 1679123456,
+//   confidence: 0.95
+// }
+
+// Error handling example
+try {
+  const price = await getAssetPrice("INVALID/USD");
+} catch (error) {
+  console.error('Failed to fetch price:', error);
+}
+```
+
+Note: The price API endpoint (`PRICE_API_URL`) should be configured when initializing the SDK. The default endpoint can be overridden through the SDK configuration.
+
+## Examples
+
+- [Tests Directory](sdk/tests/): Contains comprehensive test cases demonstrating SDK usage
+
+## Optional
+
+- [Constants](sdk/src/constants.ts): Protocol constants and configuration
+- [Public Key Derivation](sdk/src/public-key-derivation/): Utility functions for deriving program addresses
+- [Solana Utilities](sdk/src/solana/): Helper functions for Solana operations 
