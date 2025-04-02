@@ -1,6 +1,6 @@
 import { Connection } from "@solana/web3.js";
 import { Program } from "@coral-xyz/anchor";
-import { GinkoProtocol, GINKO_IDL } from "../idl";
+import { GinkoProtocol, GINKO_IDL } from "../idl.js";
 
 export class InstructionBuilder {
   protected program: Program<GinkoProtocol>;

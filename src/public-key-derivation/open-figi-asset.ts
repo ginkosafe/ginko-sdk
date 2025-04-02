@@ -1,5 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
-import { ASSET_MINT_SEED, ASSET_SEED, GINKO_PROGRAM } from "../constants";
+import { ASSET_MINT_SEED, ASSET_SEED, GINKO_PROGRAM } from "../constants.js";
 
 const DEFAULT_API_URL = "https://api.openfigi.com/v3/mapping";
 const DEFAULT_NONCE_PREFIX = "OpenFIGI:";

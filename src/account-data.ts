@@ -5,7 +5,7 @@ import {
 } from "@solana/web3.js";
 import { IdlAccounts, Program } from "@coral-xyz/anchor";
 import { Asset, Order } from "./types";
-import { GINKO_IDL, GinkoProtocol } from "./idl";
+import { GINKO_IDL, GinkoProtocol } from "./idl.js";
 
 /**
  * AccountData provides methods to fetch Ginko account data from the blockchain

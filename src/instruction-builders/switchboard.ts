@@ -14,7 +14,7 @@ import {
   getDefaultDevnetQueue,
   getDefaultQueue,
 } from "@switchboard-xyz/on-demand";
-import { BN } from "@coral-xyz/anchor";
+import BN from "bn.js"
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddressSync,
@@ -23,9 +23,9 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
-import { InstructionBuilder } from "./base";
-import { AUTH_MINT } from "../constants";
-import { OpenFIGIAsset, SwitchboardOracleFeed } from "../public-key-derivation";
+import { InstructionBuilder } from "./base.js";
+import { AUTH_MINT } from "../constants.js";
+import { OpenFIGIAsset, SwitchboardOracleFeed } from "../public-key-derivation/index.js";
 
 /**
  * Builder for Switchboard oracle-related instructions in the Ginko Protocol.

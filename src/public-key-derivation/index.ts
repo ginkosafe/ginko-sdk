@@ -1,2 +1,2 @@
-export * from "./open-figi-asset";
-export * from "./switchboard-oracle-feed";
+export * from "./open-figi-asset.js";
+export * from "./switchboard-oracle-feed.js";

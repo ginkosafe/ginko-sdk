@@ -1,4 +1,4 @@
-import { BN } from "@coral-xyz/anchor";
+import BN from "bn.js"
 import {
   PublicKey,
   TransactionInstruction,
@@ -11,15 +11,15 @@ import {
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
 
-import { InstructionBuilder } from "./base";
-import { OrderDirection, OrderType, Price, Order, Asset } from "../types";
+import { InstructionBuilder } from "./base.js";
+import { OrderDirection, OrderType, Price, Order, Asset } from "../types.js";
 import {
   GINKO_PROGRAM,
   ORDER_SEED,
   ORDER_DIRECTION,
   ORDER_TYPE,
-} from "../constants";
-import { solGetOrCreateAssociatedTokenAccountIx } from "../solana";
+} from "../constants.js";
+import { solGetOrCreateAssociatedTokenAccountIx } from "../solana/index.js";
 import BigNumber from "bignumber.js";
 
 /**

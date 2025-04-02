@@ -1,12 +1,12 @@
-import { BN } from "@coral-xyz/anchor";
+import BN from "bn.js"
 import { PublicKey, TransactionInstruction } from "@solana/web3.js";
 
-import { InstructionBuilder } from "./base";
+import { InstructionBuilder } from "./base.js";
 import {
   getAssociatedTokenAddressSync,
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
-import { AUTH_MINT } from "../constants";
+import { AUTH_MINT } from "../constants.js";
 
 /**
  * Builder for admin instructions in the Ginko Protocol.

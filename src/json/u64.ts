@@ -1,4 +1,4 @@
-import { BN } from "@coral-xyz/anchor";
+import BN from "bn.js"
 import assert from "assert";
 
 export class u64 extends BN {

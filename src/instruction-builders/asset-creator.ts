@@ -1,4 +1,4 @@
-import { BN } from "@coral-xyz/anchor";
+import BN from "bn.js"
 import {
   PublicKey,
   TransactionInstruction,
@@ -12,9 +12,9 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
-import { InstructionBuilder } from "./base";
-import { Asset } from "../types";
-import { AUTH_MINT } from "../constants";
+import { InstructionBuilder } from "./base.js";
+import { Asset } from "../types.js";
+import { AUTH_MINT } from "../constants.js";
 
 /**
  * Builder for asset creator instructions in the Ginko Protocol.

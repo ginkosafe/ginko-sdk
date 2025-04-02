@@ -1,5 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
-import { GINKO_IDL } from "./idl";
+import { GINKO_IDL } from "./idl.js";
 
 export const GINKO_PROGRAM = new PublicKey(GINKO_IDL.address);
 

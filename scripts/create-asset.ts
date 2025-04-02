@@ -1,5 +1,5 @@
 import { Connection, PublicKey } from "@solana/web3.js";
-import { BN } from "@coral-xyz/anchor";
+import BN from "bn.js"
 
 import { AssetCreatorInstructionBuilder } from "../src/instruction-builders";
 import { OpenFIGIAsset } from "../src/public-key-derivation/open-figi-asset";

@@ -3,7 +3,7 @@
 import { u64 } from "./u64";
 import { Buffer } from "buffer";
 import { PublicKey } from "@solana/web3.js";
-import { BN } from "@coral-xyz/anchor";
+import BN from "bn.js"
 
 const replaceReg = /\d*$/;
 

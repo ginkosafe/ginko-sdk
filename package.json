@@ -1,12 +1,21 @@
 {
-  "name": "@ginko/sdk",
-  "version": "0.1.0",
+  "name": "@ginkosafe/sdk",
+  "version": "0.1.2",
   "description": "TypeScript SDK for Ginko Protocol",
-  "main": "src/index.ts",
+  "private": false,
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "test": "bun test",
     "clean": "rm -rf dist",
-    "build": "tsc"
+    "build": "tsc",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",

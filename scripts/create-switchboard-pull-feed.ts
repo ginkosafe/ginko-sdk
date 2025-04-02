@@ -21,12 +21,12 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
-import { OpenFIGIAsset } from "../src/public-key-derivation/open-figi-asset";
-import { SwitchboardOracleFeed } from "../src/public-key-derivation/switchboard-oracle-feed";
-import { solBuildTx, confirmTransaction } from "../src/solana/tx";
-import { toJSON } from "../src/json/json";
-import { GINKO_IDL, GinkoProtocol } from "../src/idl";
-import { AUTH_MINT } from "../src/constants";
+import { OpenFIGIAsset } from "../src/public-key-derivation/open-figi-asset.js";
+import { SwitchboardOracleFeed } from "../src/public-key-derivation/switchboard-oracle-feed.js";
+import { solBuildTx, confirmTransaction } from "../src/solana/tx.js";
+import { toJSON } from "../src/json/json.js";
+import { GINKO_IDL, GinkoProtocol } from "../src/idl.js";
+import { AUTH_MINT } from "../src/constants.js";
 
 const jobs: OracleJob[] = [
   OracleJob.create({
